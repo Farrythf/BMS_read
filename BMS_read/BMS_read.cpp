@@ -24,7 +24,9 @@ int main()
 					"Pad: ", "Warranty Date: ", "Battery Event 1 Bitfield: ", "Battery Event 2 Bitfield: ", "Vendor Event Bitfield 1: ", "Vendor Event Bitfield 2: ", "External Battery Voltage: ",
 					"Max Battery Voltage: ", "Min Battery Voltage: ", "Max Cell Voltage: ", "Max Cell Voltage String: ", "Max Cell Voltage Module: ", "Min Cell Voltage: ", "Min Cell Voltage String: ",
 					"Min Cell Voltage Module: ", "Average Cell Voltage: ", "Total DC Current: ", "Max Charge Current: ", "Max Discharge Current: ", "Total Power: ", "Inverter State Request: ",
-					"Battery Power Request: ", "Set Operation: ", "Set Inverter State: " };
+					"Battery Power Request: ", "Set Operation: ", "Set Inverter State: ", "Scale factor for charge capacity: ", "Scale factor for energy capacity: ", "Scale factor for maximum charge and discharge rate: ",
+					"Scale factor for self discharge rate: ", "Scale factor for state of charge values", "Scale factor for depth of discharge: ", "Scale factor for state of health: ", "Scale factor for DC bus voltage: ",
+					"Scale factor for cell voltage: ", "Scale factor for DC current: ", "Scale factor for instantationous DC charge/discharge current: ", "Scale factor for AC power request: "};
 
 #pragma endregion
 
@@ -250,7 +252,7 @@ int main()
 
 #pragma region File_output
 
-	for (int i = 0; i < 46; i++)
+	for (int i = 0; i < 58; i++)
 	{
 		file << str[i] << datawr[i] << "\n";
 	}
@@ -268,7 +270,7 @@ int main()
 void welcome_info()
 {
 	std::cout << "Engine statr\n";
-	std::cout << "Version: 1.0.1\n";
+	std::cout << "Version: 1.0.2\n";
 	for (int i = 0; i < 100; i++)
 	{
 		cout << ">";
