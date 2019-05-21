@@ -91,6 +91,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Users\thf-m\OneDrive\Documents\vs_programme\BMS_read\BMS_read;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -152,6 +153,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BMS_read.cpp" />
+    <ClCompile Include="Send_Recv.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BMS_read.h" />
+    <ClInclude Include="Send_Recv.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

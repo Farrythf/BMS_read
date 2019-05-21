@@ -18,5 +18,16 @@
     <ClCompile Include="BMS_read.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Send_Recv.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BMS_read.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Send_Recv.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

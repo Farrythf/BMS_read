@@ -5,15 +5,16 @@
 #include <winsock2.h>
 #include <WS2tcpip.h>
 #include <fstream>
-#include <string>
+
+#include <BMS_read.h>
+
 using namespace std;
 
 #pragma comment(lib, "ws2_32.lib")
 
-#define Maxdatasize 1000
+
 #define PortNum 502
 
-void welcome_info();
 int main()
 {
 #pragma region String_init
@@ -27,9 +28,7 @@ int main()
 					"Battery Power Request: ", "Set Operation: ", "Set Inverter State: ", "Scale factor for charge capacity: ", "Scale factor for energy capacity: ", "Scale factor for maximum charge and discharge rate: ",
 					"Scale factor for self discharge rate: ", "Scale factor for state of charge values: ", "Scale factor for depth of discharge: ", "Scale factor for state of health: ", "Scale factor for DC bus voltage: ",
 					"Scale factor for cell voltage: ", "Scale factor for DC current: ", "Scale factor for instantationous DC charge/discharge current: ", "Scale factor for AC power request: " };
-	string str_CESS001[] = { "CESS001 identifier: ", "Qulify Code: ", "Set Operation: ", "Operating State: ", "set PCS power: ", "PCS real power: ", "meter real power: "};
-	
-	/*String for every variety read from the device, used for file written*/
+	string str_CESS001[] = { "CESS001 identifier: ", "Qulify Code: ", "Set Operation: ", "Operating State: ", "set PCS power: ", "PCS real power: ", "meter real power: " };
 
 #pragma endregion
 
@@ -138,63 +137,14 @@ int main()
 
 #pragma region Send_Recv_802
 
-	ofstream file;																								//file init
-	file.open("res_802.out", ios::out | ios::trunc);																//every time recreate the file
-	if (file.fail())
-	{
-		cout << "File open fail";																				//fatal error end the programe
-		return -1;
-	}
-
 	char Rev_data[Maxdatasize];
 	unsigned char Send_data[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x05 , 0x01, 0x03, 0x27, 0x55, 0x00, 0x40 };	//Read all the regs from 802, 64 regs, 128 byte.
-	while (true)
+	if (Send_Recv(clientSocket, Rev_data, Send_data) == -1)
 	{
-		iRet = send(clientSocket, (const char*)Send_data, sizeof(Send_data), 0);								//try send the data
-		if (SOCKET_ERROR == iRet)
-		{
-			int err = WSAGetLastError();
-			if (err == WSAEWOULDBLOCK)
-			{
-				Sleep(500);																						//send blocked, wait and try again
-				continue;
-			}
-			else
-			{
-				printf("send failed!\n");																		//fatal error end programe
-				closesocket(clientSocket);
-				WSACleanup();
-				return -1;
-			}
-		}
-		break;
-	}
-	//cout << "Sent\n";
-
-	while (true)
-	{
-		ZeroMemory(Rev_data, Maxdatasize);																		//receive data buffer
-		iRet = recv(clientSocket, Rev_data, sizeof(Rev_data), 0);												//non-blocking receive
-		if (SOCKET_ERROR == iRet)
-		{
-			int err = WSAGetLastError();
-			if (err == WSAEWOULDBLOCK)
-			{
-				Sleep(100);																						//receive blocked, wait and try again
-				continue;
-			}
-			else if (err == WSAETIMEDOUT || err == WSAENETDOWN)
-			{
-				printf("recv failed!\n");																		//fatal error, end programe
-				closesocket(clientSocket);
-				WSACleanup();
-				return -1;
-			}
-			break;
-		}
-		break;
+		return -1;
 	}
 	GetLocalTime(&st);
+
 #pragma endregion
 
 #pragma region Data_format_802
@@ -260,6 +210,13 @@ int main()
 
 #pragma region File_output_802
 
+	ofstream file;																								//file init
+	file.open("res_802.out", ios::out | ios::trunc);																//every time recreate the file
+	if (file.fail())
+	{
+		cout << "File open fail";																				//fatal error end the programe
+		return -1;
+	}
 	file << "***************************************************************";
 	file << "\n******************Time and Information*************************\n*******************";
 	file << st.wMonth << "/" << st.wDay << "/" << st.wYear << " " << st.wHour << ":" << st.wMinute << ":" << st.wSecond;
@@ -276,63 +233,13 @@ int main()
 #pragma endregion
 
 #pragma region Send_Recv_CESS001
-																							//file init
-	file.open("res_CESS001.out", ios::out | ios::trunc);														//every time recreate the file
-	if (file.fail())
-	{
-		cout << "File open fail";																				//fatal error end the programe
-		return -1;
-	}
 
 	Send_data[8] = 0x26;
 	Send_data[9] = 0xac;
 	Send_data[11] = 0x07;																						//Read all the regs from CESS001, 7 regs, 14 byte.
-
-	while (true)
+	if (Send_Recv(clientSocket, Rev_data, Send_data) == -1)
 	{
-		iRet = send(clientSocket, (const char*)Send_data, sizeof(Send_data), 0);								//try send the data
-		if (SOCKET_ERROR == iRet)
-		{
-			int err = WSAGetLastError();
-			if (err == WSAEWOULDBLOCK)
-			{
-				Sleep(500);																						//send blocked, wait and try again
-				continue;
-			}
-			else
-			{
-				printf("send failed!\n");																		//fatal error end programe
-				closesocket(clientSocket);
-				WSACleanup();
-				return -1;
-			}
-		}
-		break;
-	}
-	//cout << "Sent\n";
-
-	while (true)
-	{
-		ZeroMemory(Rev_data, Maxdatasize);																		//receive data buffer
-		iRet = recv(clientSocket, Rev_data, sizeof(Rev_data), 0);												//non-blocking receive
-		if (SOCKET_ERROR == iRet)
-		{
-			int err = WSAGetLastError();
-			if (err == WSAEWOULDBLOCK)
-			{
-				Sleep(100);																						//receive blocked, wait and try again
-				continue;
-			}
-			else if (err == WSAETIMEDOUT || err == WSAENETDOWN)
-			{
-				printf("recv failed!\n");																		//fatal error, end programe
-				closesocket(clientSocket);
-				WSACleanup();
-				return -1;
-			}
-			break;
-		}
-		break;
+		return -1;
 	}
 	GetLocalTime(&st);
 #pragma endregion
@@ -356,6 +263,13 @@ int main()
 #pragma endregion
 
 #pragma region File_output_CESS001
+
+	file.open("res_CESS001.out", ios::out | ios::trunc);														//every time recreate the file
+	if (file.fail())
+	{
+		cout << "File open fail";																				//fatal error end the programe
+		return -1;
+	}
 
 	file << "***************************************************************";
 	file << "\n******************Time and Information*************************\n*******************";
@@ -381,7 +295,7 @@ int main()
 void welcome_info()
 {
 	std::cout << "Engine statr\n";
-	std::cout << "Version: 1.0.4\n";
+	std::cout << "Version: 1.0.6\n";
 	for (int i = 0; i < 100; i++)
 	{
 		cout << ">";
