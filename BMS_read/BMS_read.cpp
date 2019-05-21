@@ -381,7 +381,7 @@ int main()
 void welcome_info()
 {
 	std::cout << "Engine statr\n";
-	std::cout << "Version: 1.0.4\n";
+	std::cout << "Version: 1.1.0\n";
 	for (int i = 0; i < 100; i++)
 	{
 		cout << ">";
