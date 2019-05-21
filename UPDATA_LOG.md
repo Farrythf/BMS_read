@@ -7,3 +7,8 @@
 ## 05/20/2019 Version: 1.0.4
   * Add data collect from SCESS001
   * Adjust many varity name and keep uniformity
+## 05/21/2019 Version: 1.0.5
+  * Add headfile
+## 05/21/2019 Version: 1.0.6
+  * Seperate the function "Send_Recv"
+  * Adjust everything for easy reuse
