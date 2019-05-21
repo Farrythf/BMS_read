@@ -18,7 +18,7 @@ int main()
 {
 #pragma region String_init
 
-	string str[] = { "Battery Base Model: ", "Qulify Code: ", "Nameplate Charge Capacity(Ah): ", "Nameplate Energy Capacity(Wh): ", "Nameplate Max Charge Rate: ", "Namplate Max Discharge Rate: ",
+	string str_802[] = { "Battery Base Model: ", "Qulify Code: ", "Nameplate Charge Capacity(Ah): ", "Nameplate Energy Capacity(Wh): ", "Nameplate Max Charge Rate: ", "Namplate Max Discharge Rate: ",
 					"Self Discharge Rate: ", "Nameplate Max SoC: ", "Nameplate Min SoC: ", "Max Reserve Percent: ", "Min Reserve Percent: ", "State of Charge: ", "Depth of Discharge: ",
 					"State of Health: ", "Cycle Count: ", "Charge Status: ", "Control Mode: ", "Battery Heartbeat: ", "Controller Heartbeat: ", "Alarm Reset: ", "Battery Type: ", "State of the Battery Bank: ",
 					"Pad: ", "Warranty Date: ", "Battery Event 1 Bitfield: ", "Battery Event 2 Bitfield: ", "Vendor Event Bitfield 1: ", "Vendor Event Bitfield 2: ", "External Battery Voltage: ",
@@ -26,7 +26,8 @@ int main()
 					"Min Cell Voltage Module: ", "Average Cell Voltage: ", "Total DC Current: ", "Max Charge Current: ", "Max Discharge Current: ", "Total Power: ", "Inverter State Request: ",
 					"Battery Power Request: ", "Set Operation: ", "Set Inverter State: ", "Scale factor for charge capacity: ", "Scale factor for energy capacity: ", "Scale factor for maximum charge and discharge rate: ",
 					"Scale factor for self discharge rate: ", "Scale factor for state of charge values: ", "Scale factor for depth of discharge: ", "Scale factor for state of health: ", "Scale factor for DC bus voltage: ",
-					"Scale factor for cell voltage: ", "Scale factor for DC current: ", "Scale factor for instantationous DC charge/discharge current: ", "Scale factor for AC power request: "};
+					"Scale factor for cell voltage: ", "Scale factor for DC current: ", "Scale factor for instantationous DC charge/discharge current: ", "Scale factor for AC power request: " };
+	string str_CESS001[] = { "CESS001 identifier: ", "Qulify Code: ", "Set Operation: ", "Operating State: ", "set PCS power: ", "PCS real power: ", "meter real power: "};
 	
 	/*String for every variety read from the device, used for file written*/
 
@@ -135,10 +136,10 @@ int main()
 
 #pragma endregion
 
-#pragma region Send_Recv
+#pragma region Send_Recv_802
 
 	ofstream file;																								//file init
-	file.open("res.out", ios::out | ios::trunc);																//every time recreate the file
+	file.open("res_802.out", ios::out | ios::trunc);																//every time recreate the file
 	if (file.fail())
 	{
 		cout << "File open fail";																				//fatal error end the programe
@@ -193,9 +194,10 @@ int main()
 		}
 		break;
 	}
+	GetLocalTime(&st);
 #pragma endregion
 
-#pragma region Data_format
+#pragma region Data_format_802
 
 	int Data_802[Maxdatasize];
 	memset(Data_802, 0, sizeof(Data_802));
@@ -256,11 +258,114 @@ int main()
 
 #pragma endregion
 
-#pragma region File_output
+#pragma region File_output_802
 
+	file << "***************************************************************";
+	file << "\n******************Time and Information*************************\n*******************";
+	file << st.wMonth << "/" << st.wDay << "/" << st.wYear << " " << st.wHour << ":" << st.wMinute << ":" << st.wSecond;
+	file << "**************************\n**********";
+	file << "Server IP: " << "192.168.11.106" << " Port: " << "501" << "******************\n";
+	file << "***************************************************************\n";
 	for (int i = 0; i < 58; i++)
 	{
-		file << str[i] << Data_802[i] << "\n";		//normal file export 
+		file << str_802[i] << Data_802[i] << "\n";		//normal file export 
+	}
+	file << "\n";
+	file.close();
+
+#pragma endregion
+
+#pragma region Send_Recv_CESS001
+																							//file init
+	file.open("res_CESS001.out", ios::out | ios::trunc);														//every time recreate the file
+	if (file.fail())
+	{
+		cout << "File open fail";																				//fatal error end the programe
+		return -1;
+	}
+
+	Send_data[8] = 0x26;
+	Send_data[9] = 0xac;
+	Send_data[11] = 0x07;																						//Read all the regs from CESS001, 7 regs, 14 byte.
+
+	while (true)
+	{
+		iRet = send(clientSocket, (const char*)Send_data, sizeof(Send_data), 0);								//try send the data
+		if (SOCKET_ERROR == iRet)
+		{
+			int err = WSAGetLastError();
+			if (err == WSAEWOULDBLOCK)
+			{
+				Sleep(500);																						//send blocked, wait and try again
+				continue;
+			}
+			else
+			{
+				printf("send failed!\n");																		//fatal error end programe
+				closesocket(clientSocket);
+				WSACleanup();
+				return -1;
+			}
+		}
+		break;
+	}
+	//cout << "Sent\n";
+
+	while (true)
+	{
+		ZeroMemory(Rev_data, Maxdatasize);																		//receive data buffer
+		iRet = recv(clientSocket, Rev_data, sizeof(Rev_data), 0);												//non-blocking receive
+		if (SOCKET_ERROR == iRet)
+		{
+			int err = WSAGetLastError();
+			if (err == WSAEWOULDBLOCK)
+			{
+				Sleep(100);																						//receive blocked, wait and try again
+				continue;
+			}
+			else if (err == WSAETIMEDOUT || err == WSAENETDOWN)
+			{
+				printf("recv failed!\n");																		//fatal error, end programe
+				closesocket(clientSocket);
+				WSACleanup();
+				return -1;
+			}
+			break;
+		}
+		break;
+	}
+	GetLocalTime(&st);
+#pragma endregion
+
+#pragma region Data_format_CESS001
+
+	int Data_CESS001[Maxdatasize];
+	memset(Data_CESS001, 0, sizeof(Data_CESS001));
+
+	indx = 0;
+	for (int i = 9; i < 23;)								//format the data read from the device
+	{														//the read-back data is char array(normal order)
+		inter = Rev_data[i];								//to convert the char array to int
+		Rev_data[i] = Rev_data[i + 1];						//memcpy is used to realize the process
+		Rev_data[i + 1] = inter;							//in Windows data storage is in abnormal order
+		memcpy(Data_CESS001 + indx, Rev_data + i, 2);		//the least significant bit is in the leftest
+		indx++;												//thus we should adjust the order manually	
+		i = i + 2;											
+	}
+
+#pragma endregion
+
+#pragma region File_output_CESS001
+
+	file << "***************************************************************";
+	file << "\n******************Time and Information*************************\n*******************";
+	file << st.wMonth << "/" << st.wDay << "/" << st.wYear << " " << st.wHour << ":" << st.wMinute << ":" << st.wSecond;
+	file << "**************************\n**********";
+	file << "Server IP: " << "192.168.11.106" << " Port: " << "501" << "******************\n";
+	file << "***************************************************************\n";
+	for (int i = 0; i < 7; i++)
+	{
+		file << str_CESS001[i] << Data_CESS001[i] << "\n";		//normal file export 
 	}
 	file << "\n";
 	file.close();
@@ -276,7 +381,7 @@ int main()
 void welcome_info()
 {
 	std::cout << "Engine statr\n";
-	std::cout << "Version: 1.0.3\n";
+	std::cout << "Version: 1.0.4\n";
 	for (int i = 0; i < 100; i++)
 	{
 		cout << ">";
