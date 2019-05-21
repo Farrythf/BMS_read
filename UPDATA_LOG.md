@@ -4,3 +4,6 @@
 ## 05/20/2019 Version: 1.0.3
   * Comment added
   * Receive data buffer name changed
+## 05/20/2019 Version: 1.0.4
+  * Add data collect from SCESS001
+  * Adjust many varity name and keep uniformity
