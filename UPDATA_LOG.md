@@ -7,3 +7,5 @@
 ## 05/20/2019 Version: 1.0.4
   * Add data collect from SCESS001
   * Adjust many varity name and keep uniformity
+## 05/20/2019 Version: 1.1.0
+  * Test pass
