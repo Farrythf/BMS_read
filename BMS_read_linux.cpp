@@ -2,15 +2,19 @@
 //
 
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <stdio.h>
 #include <netinet/in.h>
+#include <stdio.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/shm.h>
+#include <errno.h>
+#include <iostream>
+#include <fstream>
+#include <time.h>
+#include <sys/time.h>
 using namespace std;
 
 #pragma comment(lib, "ws2_32.lib")
@@ -70,7 +74,7 @@ int main()
 	cin >> ip_addr;
 	cout << "Connecting...";
 	struct sockaddr_in Serv_addr;							//sturcture for ip address
-	memset(&Serv_addr, 0 sizeof(Serv_addr));
+	memset(&Serv_addr, 0, sizeof(Serv_addr));
 	Serv_addr.sin_addr.s_addr = inet_addr(ip_addr);		//use old version function "inet_addr",change it if you want
 	Serv_addr.sin_family = AF_INET;							//stipulate the family format
 	Serv_addr.sin_port = htons(port);						//define port number
@@ -82,27 +86,12 @@ int main()
 	while (true)
 	{
 		iRet = connect(clientSocket, (struct sockaddr*)& Serv_addr, sizeof(Serv_addr));								//try to connect
-		if (0 != iRet)
+		if (iRet == -1)
 		{
-			int err = WSAGetLastError();
-			if (err == WSAEWOULDBLOCK || err == WSAEINVAL)													//connection bolcked, wait and try again
-			{
-				Sleep(500);
-				continue;
-			}
-			else if (err == WSAEISCONN)
-			{
-				break;																						//connect successful
-			}
-			else
-			{
-				cout << "connect(clientSocket, (SOCKADDR*)&srvAddr, sizeof(SOCKADDR)) execute failed!";		//fatal error, end programe
-				closesocket(clientSocket);
-				WSACleanup();
-				return -1;
-			}
-
+			perror("Connect Error: ");
+			return -1;
 		}
+		break;
 	}
 	cout << "OK\n";																							//connection information and time
 	cout << "Connected!\n";
@@ -110,11 +99,13 @@ int main()
 	{
 		cout << ">";
 	}
-	SYSTEMTIME st = { 0 };
-	GetLocalTime(&st);
+	time_t now;
+	struct tm *timenow;
+	time(&now);
+	timenow = localtime(&now);
 	cout << "\n***************************************************************";
 	cout << "\n******************Time and Information*************************\n*******************";
-	cout << st.wMonth << "/" << st.wDay << "/" << st.wYear << " " << st.wHour << ":" << st.wMinute << ":" << st.wSecond;
+	cout << timenow->tm_year + 1900 << "/" << timenow->tm_mon + 1 << "/" << timenow->tm_mday << " " << timenow->tm_hour << ":" << timenow->tm_min << ":" << timenow->tm_sec;
 	cout << "**************************\n**********";
 	cout << "Server IP: " << "192.168.11.106" << " Port: " << "501" << "******************\n";
 	cout << "***************************************************************\n";
@@ -135,22 +126,11 @@ int main()
 	unsigned char Send_data[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x05 , 0x01, 0x03, 0x27, 0x55, 0x00, 0x40 };	//Read all the regs from 802, 64 regs, 128 byte.
 	while (true)
 	{
-		iRet = send(clientSocket, (const char*)Send_data, sizeof(Send_data), 0);								//try send the data
-		if (SOCKET_ERROR == iRet)
+		iRet = send(clientSocket, (const char*)Send_data, sizeof(Send_data), MSG_NOSIGNAL);								//try send the data
+		if (iRet == -1)
 		{
-			int err = WSAGetLastError();
-			if (err == WSAEWOULDBLOCK)
-			{
-				Sleep(500);																						//send blocked, wait and try again
-				continue;
-			}
-			else
-			{
-				printf("send failed!\n");																		//fatal error end programe
-				closesocket(clientSocket);
-				WSACleanup();
-				return -1;
-			}
+			perror("Send error: ");
+			return -1;
 		}
 		break;
 	}
@@ -158,28 +138,18 @@ int main()
 
 	while (true)
 	{
-		ZeroMemory(Rev_data, Maxdatasize);																		//receive data buffer
+		memset(Rev_data, 0, sizeof(Rev_data));																	//receive data buffer
 		iRet = recv(clientSocket, Rev_data, sizeof(Rev_data), 0);												//non-blocking receive
-		if (SOCKET_ERROR == iRet)
+		if (iRet == -1)
 		{
-			int err = WSAGetLastError();
-			if (err == WSAEWOULDBLOCK)
-			{
-				Sleep(100);																						//receive blocked, wait and try again
-				continue;
-			}
-			else if (err == WSAETIMEDOUT || err == WSAENETDOWN)
-			{
-				printf("recv failed!\n");																		//fatal error, end programe
-				closesocket(clientSocket);
-				WSACleanup();
-				return -1;
-			}
-			break;
+			perror("Recv error: ");
+			return -1;
 		}
 		break;
 	}
-	GetLocalTime(&st);
+	time(&now);
+	timenow = localtime(&now);
+
 #pragma endregion
 
 #pragma region Data_format_802
@@ -247,7 +217,7 @@ int main()
 
 	file << "***************************************************************";
 	file << "\n******************Time and Information*************************\n*******************";
-	file << st.wMonth << "/" << st.wDay << "/" << st.wYear << " " << st.wHour << ":" << st.wMinute << ":" << st.wSecond;
+	file << timenow->tm_year + 1900 << "/" << timenow->tm_mon + 1 << "/" << timenow->tm_mday << " " << timenow->tm_hour << ":" << timenow->tm_min << ":" << timenow->tm_sec;
 	file << "**************************\n**********";
 	file << "Server IP: " << "192.168.11.106" << " Port: " << "501" << "******************\n";
 	file << "***************************************************************\n";
@@ -275,22 +245,11 @@ int main()
 
 	while (true)
 	{
-		iRet = send(clientSocket, (const char*)Send_data, sizeof(Send_data), 0);								//try send the data
-		if (SOCKET_ERROR == iRet)
+		iRet = send(clientSocket, (const char*)Send_data, sizeof(Send_data), MSG_NOSIGNAL);								//try send the data
+		if (iRet == -1)
 		{
-			int err = WSAGetLastError();
-			if (err == WSAEWOULDBLOCK)
-			{
-				Sleep(500);																						//send blocked, wait and try again
-				continue;
-			}
-			else
-			{
-				printf("send failed!\n");																		//fatal error end programe
-				closesocket(clientSocket);
-				WSACleanup();
-				return -1;
-			}
+			perror("Send error: ");
+			return -1;
 		}
 		break;
 	}
@@ -298,28 +257,17 @@ int main()
 
 	while (true)
 	{
-		ZeroMemory(Rev_data, Maxdatasize);																		//receive data buffer
+		memset(Rev_data, 0, sizeof(Rev_data));																		//receive data buffer
 		iRet = recv(clientSocket, Rev_data, sizeof(Rev_data), 0);												//non-blocking receive
-		if (SOCKET_ERROR == iRet)
+		if (iRet == -1)
 		{
-			int err = WSAGetLastError();
-			if (err == WSAEWOULDBLOCK)
-			{
-				Sleep(100);																						//receive blocked, wait and try again
-				continue;
-			}
-			else if (err == WSAETIMEDOUT || err == WSAENETDOWN)
-			{
-				printf("recv failed!\n");																		//fatal error, end programe
-				closesocket(clientSocket);
-				WSACleanup();
-				return -1;
-			}
-			break;
+			perror("Recv error: ");
+			return -1;
 		}
 		break;
 	}
-	GetLocalTime(&st);
+	time(&now);
+	timenow = localtime(&now);
 #pragma endregion
 
 #pragma region Data_format_CESS001
@@ -344,7 +292,7 @@ int main()
 
 	file << "***************************************************************";
 	file << "\n******************Time and Information*************************\n*******************";
-	file << st.wMonth << "/" << st.wDay << "/" << st.wYear << " " << st.wHour << ":" << st.wMinute << ":" << st.wSecond;
+	file << timenow->tm_year + 1900 << "/" << timenow->tm_mon + 1 << "/" << timenow->tm_mday << " " << timenow->tm_hour << ":" << timenow->tm_min << ":" << timenow->tm_sec;
 	file << "**************************\n**********";
 	file << "Server IP: " << "192.168.11.106" << " Port: " << "501" << "******************\n";
 	file << "***************************************************************\n";
@@ -357,8 +305,7 @@ int main()
 
 #pragma endregion
 
-	closesocket(clientSocket);
-	WSACleanup();
+	close(clientSocket);
 	system("pause");
 	return 0;
 }
@@ -366,7 +313,7 @@ int main()
 void welcome_info()
 {
 	std::cout << "Engine statr\n";
-	std::cout << "Version: 1.1.0\n";
+	std::cout << "Version: 0.1.1\n";
 	for (int i = 0; i < 100; i++)
 	{
 		cout << ">";
