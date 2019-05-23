@@ -9,3 +9,5 @@
   * Adjust many varity name and keep uniformity
 ## 05/20/2019 Version: 1.1.0
   * Test pass
+## 05/22/2019 Version: 1.1.1
+  * Function seperated
