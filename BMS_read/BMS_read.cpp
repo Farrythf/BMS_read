@@ -127,6 +127,10 @@ int main()
 
 #pragma endregion
 
+#pragma region Main_UI
+
+
+
 	int User_chos = 3;
 	cout << "What operation do you want to launch?\n 1. Write PCS 2. Read data 3. Quit\n";
 	while (true)
@@ -144,6 +148,9 @@ int main()
 	WSACleanup();
 	system("pause");
 	return 0;
+
+#pragma endregion
+
 }
 
 void welcome_info()
