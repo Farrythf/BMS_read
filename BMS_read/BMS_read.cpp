@@ -127,10 +127,6 @@ int main()
 
 #pragma endregion
 
-#pragma region Main_UI
-
-
-
 	int User_chos = 3;
 	cout << "What operation do you want to launch?\n 1. Write PCS 2. Read data 3. Quit\n";
 	while (true)
@@ -148,15 +144,12 @@ int main()
 	WSACleanup();
 	system("pause");
 	return 0;
-
-#pragma endregion
-
 }
 
 void welcome_info()
 {
 	std::cout << "Engine statr\n";
-	std::cout << "Version: 2.0.0\n";
+	std::cout << "Version: 1.1.1\n";
 	for (int i = 0; i < 100; i++)
 	{
 		cout << ">";
@@ -187,7 +180,7 @@ int Send_Recv()
 #pragma region Send_Recv_802
 
 	char Rev_data[Maxdatasize];
-	unsigned char Send_data[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x05 , 0x01, 0x03, 0x27, 0x55, 0x00, 0x40 };	//Read all the regs from 802, 64 regs, 128 byte.
+	unsigned char Send_data[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x01, 0x03, 0x27, 0x55, 0x00, 0x40 };	//Read all the regs from 802, 64 regs, 128 byte.
 	while (true)
 	{
 		iRet = send(clientSocket, (const char*)Send_data, sizeof(Send_data), 0);								//try send the data
@@ -425,12 +418,13 @@ int Send_Recv()
 int Write_PCS()
 {
 	int User_num;
+	char Rev_data[Maxdatasize];
 	cout << "Number you want to write: ";
 	cin >> User_num;
 	unsigned char ch[4];
 	memcpy(ch, &User_num, 4);
-	unsigned char Send_data[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x05 , 0x01, 0x06, 0x26, 0xb0, 0x00, 0x40 };	//Read all the regs from 802, 64 regs, 128 byte.
-	Send_data[11] = ch[0];
+	unsigned char Send_data[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x01, 0x10, 0x26, 0xae, 0x00, 0x01, 0x02, 0x00, 0x02 };	//Read all the regs from 802, 64 regs, 128 byte.
+	//Send_data[11] = ch[0];
 	while (true)
 	{
 		iRet = send(clientSocket, (const char*)Send_data, sizeof(Send_data), 0);								//try send the data
@@ -452,6 +446,37 @@ int Write_PCS()
 		}
 		break;
 	}
+	while (true)
+	{
+		ZeroMemory(Rev_data, Maxdatasize);																		//receive data buffer
+		iRet = recv(clientSocket, Rev_data, sizeof(Rev_data), 0);												//non-blocking receive
+		if (SOCKET_ERROR == iRet)
+		{
+			int err = WSAGetLastError();
+			if (err == WSAEWOULDBLOCK)
+			{
+				Sleep(100);																						//receive blocked, wait and try again
+				continue;
+			}
+			else if (err == WSAETIMEDOUT || err == WSAENETDOWN)
+			{
+				printf("recv failed!\n");																		//fatal error, end programe
+				closesocket(clientSocket);
+				WSACleanup();
+				return -1;
+			}
+			break;
+		}
+		break;
+	}
+	int Data_write[Maxdatasize];
+	memset(Data_write, 0, sizeof(Data_write));
+	for (int i = 0; i < sizeof(Rev_data);)
+	{
+		memcpy(Data_write + i, Rev_data + i, 1);
+		i = i + 1;
+	}
+	cout << Data_write << "\n";
 	cout << "Success\n";
 	return 0;
 }
