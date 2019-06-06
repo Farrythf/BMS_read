@@ -6,6 +6,7 @@
 #include <WS2tcpip.h>
 #include <fstream>
 #include <string>
+#include <libpq-fe.h>
 using namespace std;
 
 #pragma comment(lib, "ws2_32.lib")
@@ -16,6 +17,8 @@ using namespace std;
 int iRet = 0;															//a global identifier for error detect
 SOCKET clientSocket;
 int filecount = 0;
+extern void PQfinish(PGconn* conn);
+extern void PQclear(PGresult* res);
 
 void welcome_info();
 int Send_Recv();
@@ -75,7 +78,7 @@ int main()
 	int port = PortNum;										//for prot number
 	cout << "Server IP: ";
 	cin >> ip_addr;
-	cout << "Connecting...";
+	cout << "Connecting socket...";
 	SOCKADDR_IN srv_Addr;									//sturcture for ip address
 	srv_Addr.sin_addr.S_un.S_addr = inet_addr(ip_addr);		//use old version function "inet_addr",change it if you want
 	srv_Addr.sin_family = AF_INET;							//stipulate the family format
@@ -110,8 +113,7 @@ int main()
 
 		}
 	}
-	cout << "OK\n";																							//connection information and time
-	cout << "Connected!\n";
+	cout << "OK\n";	
 	for (int i = 0; i < 100; i++)
 	{
 		cout << ">";
@@ -126,6 +128,23 @@ int main()
 	cout << "***************************************************************\n\n";
 
 #pragma endregion
+
+#pragma region Database_connect
+
+	cout << "Connecting database...";
+	PGconn* conn = PQsetdbLogin("127.0.0.1", "5432", NULL, NULL, "mydatabase", "postgres", "1234");
+	if (conn == NULL)
+	{
+		cout << "Failed\n";
+		cout << PQerrorMessage(conn) << "\n";
+		return -1;
+	}
+	cout << "OK\n";
+
+#pragma endregion
+
+
+#pragma region While_loop
 
 	int User_chos = 3;
 	cout << "What operation do you want to launch?\n 1. Write PCS 2. Read data 3. Quit\n";
@@ -143,6 +162,8 @@ int main()
 	closesocket(clientSocket);
 	WSACleanup();
 	system("pause");
+#pragma endregion
+
 	return 0;
 }
 
