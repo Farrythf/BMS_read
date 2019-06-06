@@ -17,11 +17,9 @@ using namespace std;
 int iRet = 0;															//a global identifier for error detect
 SOCKET clientSocket;
 int filecount = 0;
-extern void PQfinish(PGconn* conn);
-extern void PQclear(PGresult* res);
 
 void welcome_info();
-int Send_Recv();
+int Send_Recv(PGconn* conn);
 int Write_PCS();
 
 int main()
@@ -156,11 +154,12 @@ int main()
 		if (User_chos == 1)
 			Write_PCS();
 		if (User_chos == 2)
-			Send_Recv();
+			Send_Recv(conn);
 	}
 
 	closesocket(clientSocket);
 	WSACleanup();
+	PQfinish(conn);
 	system("pause");
 #pragma endregion
 
@@ -170,7 +169,7 @@ int main()
 void welcome_info()
 {
 	std::cout << "Engine statr\n";
-	std::cout << "Version: 1.1.1\n";
+	std::cout << "Version: 2.0.0\n";
 	for (int i = 0; i < 100; i++)
 	{
 		cout << ">";
@@ -178,7 +177,7 @@ void welcome_info()
 	cout << "\n";
 }
 
-int Send_Recv()
+int Send_Recv(PGconn* conn)
 {
 
 #pragma region String_init
@@ -337,6 +336,24 @@ int Send_Recv()
 
 #pragma endregion
 
+#pragma region DB_write_802
+
+	PGresult* res = PQexec(conn, "CREATE TABLE ESTIMATE(\"Times\" TIMESTAMP WITHOUT TIME ZONE NOT NULL, \"P(KW)\" INT, \"SoC(%)\" INT, \"DoD(%)\" INT, \"SoH(%)\" INT, \"NCYC\" INT, \"Heartbeat\" INT, \"Voltage(V)\" INT, \"Current(A)\" INT, \"Temp(F)\" INT, \"Tmax(F)\" INT, \"Tmin(F)\" INT, \"Vmax(V)\" INT, \"Vmin(V)\" INT, \"ESS_ID\" INT)"); 
+	char SQL_com[1000];
+	char time[1000];
+	sprintf_s(time, "'%d-%d-%d %d:%d:%d.%d'", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+	sprintf_s(SQL_com, "INSERT INTO ESTIMATE VALUES( %s, %d, %d, %d, %d, %d, %d, %d, %d, 0, 0, 0, %d, %d, 1)", time, Data_802[41], Data_802[11], Data_802[12], Data_802[13],
+			Data_802[14], Data_802[17], Data_802[28], Data_802[38], Data_802[29], Data_802[30]);
+	res = PQexec(conn, ch);
+	if (PQresultStatus(res) != 1)
+	{
+		cout << "DB_write error!";
+		cout << PQresultErrorMessage(res);
+	}
+	PQclear(res);
+
+#pragma endregion
+
 #pragma region Send_Recv_CESS001
 
 	Send_data[8] = 0x26;
@@ -433,6 +450,8 @@ int Send_Recv()
 	filecount++;
 	cout << "Success\n";
 #pragma endregion
+
+
 	return 0;
 }
 
@@ -501,7 +520,6 @@ int Write_PCS()
 	cout << "Success\n";
 	return 0;
 }
-
 
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
