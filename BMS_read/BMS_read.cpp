@@ -344,7 +344,7 @@ int Send_Recv(PGconn* conn)
 	sprintf_s(time, "'%d-%d-%d %d:%d:%d.%d'", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
 	sprintf_s(SQL_com, "INSERT INTO ESTIMATE VALUES( %s, %d, %d, %d, %d, %d, %d, %d, %d, 0, 0, 0, %d, %d, 1)", time, Data_802[41], Data_802[11], Data_802[12], Data_802[13],
 			Data_802[14], Data_802[17], Data_802[28], Data_802[38], Data_802[29], Data_802[30]);
-	res = PQexec(conn, ch);
+	res = PQexec(conn, SQL_com);
 	if (PQresultStatus(res) != 1)
 	{
 		cout << "DB_write error!";
